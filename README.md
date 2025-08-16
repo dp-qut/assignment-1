@@ -63,7 +63,7 @@ User Mgmt → Analytics → Document Verify → Approve/Reject
 ```
 ### Jira Board Url
 
-- **URL***: https://n12160202.atlassian.net/jira/software/projects/A1/boards/34/timeline?atlOrigin=eyJpIjoiM2ZjYzYwOWRmYWExNDY1OTk5ZGYzMzdhYmYwMjhkZGUiLCJwIjoiaiJ9
+- **URL**: https://n12160202.atlassian.net/jira/software/projects/A1/boards/34/timeline?atlOrigin=eyJpIjoiM2ZjYzYwOWRmYWExNDY1OTk5ZGYzMzdhYmYwMjhkZGUiLCJwIjoiaiJ9
 
 ## 🛠️ Technology Stack
 
@@ -247,4 +247,5 @@ Components/
 - **Bundle optimization** with Create React App
 - **Memoization** with React.memo and useMemo
 - **Virtual scrolling** for large lists
+
 
