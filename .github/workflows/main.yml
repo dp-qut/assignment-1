@@ -1,0 +1,39 @@
+name: Deploy Frontend & Backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  frontend-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.18.0'
+
+      - name: Install dependencies
+        working-directory: ./assignment-1/frontend
+        run: npm install
+
+      - name: Build project
+        working-directory: ./assignment-1/frontend
+        run: npm run build  
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::957280466789:role/GithubDeploymentRole
+          aws-region: ap-southeast-2
+
+      - name: Sync frontend build to S3
+        run: |
+          aws s3 sync ./assignment-1/frontend/build/ s3://assigment1-bucket-frontend/ --delete
