@@ -59,8 +59,9 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --comment "Deploy backend app" \
             --parameters 'commands=[
-              "cd ~/assignment-1/backend",
+              "cd ~/assignment-1",
               "git pull origin main",
+              "cd ~/assignment-1/backend",
               "npm install",
               "pm2 start src/server.js --name backend || pm2 restart backend"
             ]'
