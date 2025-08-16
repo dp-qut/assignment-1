@@ -37,3 +37,30 @@ jobs:
       - name: Sync frontend build to S3
         run: |
           aws s3 sync ./frontend/build/ s3://assigment1-bucket-frontend/ --delete
+
+  backend-deploy:
+    runs-on: ubuntu-latest
+    needs: frontend-deploy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::957280466789:role/GithubDeploymentRole
+          aws-region: ap-southeast-2
+
+      - name: Run backend deploy commands on EC2 via SSM
+        run: |
+          aws ssm send-command \
+            --targets "Key=instanceIds,Values=i-02b2d6c1507b7a662" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy backend app" \
+            --parameters 'commands=[
+              "cd ~/assignment-1/backend",
+              "git pull origin main",
+              "npm install",
+              "pm2 start src/server.js --name backend || pm2 restart backend"
+            ]'
