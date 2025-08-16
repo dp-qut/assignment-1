@@ -61,90 +61,9 @@ Admin Login → Dashboard → Application Review → Status Update
      ↓            ↓             ↓                 ↓            
 User Mgmt → Analytics → Document Verify → Approve/Reject
 ```
+### Jira Board Url
 
-## 📂 Project Structure
-
-```
-E-Visa-Application/
-├── 📁 backend/                 # Node.js Express Backend
-│   ├── 📁 src/
-│   │   ├── 📁 controllers/     # Business logic handlers
-│   │   │   ├── authController.js
-│   │   │   ├── applicationController.js
-│   │   │   ├── adminController.js
-│   │   │   └── userController.js
-│   │   ├── 📁 models/          # MongoDB Mongoose schemas
-│   │   │   ├── User.js
-│   │   │   ├── Application.js
-│   │   │   ├── VisaType.js
-│   │   │   └── Document.js
-│   │   ├── 📁 routes/          # API route definitions
-│   │   │   ├── authRoutes.js
-│   │   │   ├── applicationRoutes.js
-│   │   │   ├── adminRoutes.js
-│   │   │   └── userRoutes.js
-│   │   ├── 📁 middleware/      # Custom middleware
-│   │   │   ├── auth.js
-│   │   │   ├── validation.js
-│   │   │   ├── upload.js
-│   │   │   └── rateLimiter.js
-│   │   ├── 📁 services/        # External service integrations
-│   │   │   ├── emailService.js
-│   │   │   ├── fileService.js
-│   │   │   └── paymentService.js
-│   │   ├── 📁 utils/           # Helper functions
-│   │   │   ├── validators.js
-│   │   │   ├── formatters.js
-│   │   │   └── constants.js
-│   │   ├── 📁 config/          # Configuration files
-│   │   │   └── database.js
-│   │   └── 📄 server.js        # Application entry point
-│   ├── 📁 uploads/             # Local file storage
-│   ├── 📄 package.json
-│   ├── 📄 .env.example
-│   └── 📄 createAdmin.js       # Admin user setup
-├── 📁 frontend/                # React Frontend Application
-│   ├── 📁 src/
-│   │   ├── 📁 components/      # React components
-│   │   │   ├── 📁 auth/        # Authentication components
-│   │   │   │   ├── Login.js
-│   │   │   │   └── Register.js
-│   │   │   ├── 📁 common/      # Shared components
-│   │   │   │   ├── Header.js
-│   │   │   │   └── Layout.js
-│   │   │   ├── 📁 admin/       # Admin-specific components
-│   │   │   │   ├── DashboardStats.js
-│   │   │   │   └── ReportsComponent.js
-│   │   │   ├── Dashboard.js    # User dashboard
-│   │   │   ├── ApplicationForm.js
-│   │   │   ├── DocumentUpload.js
-│   │   │   ├── PaymentForm.js
-│   │   │   └── AdminDashboard.js
-│   │   ├── 📁 contexts/        # React context providers
-│   │   │   ├── AuthContext.js
-│   │   │   └── NotificationContext.js
-│   │   ├── 📁 services/        # API service calls
-│   │   │   ├── api.js
-│   │   │   ├── authService.js
-│   │   │   └── paymentService.js
-│   │   ├── 📁 utils/           # Utility functions
-│   │   │   ├── validationHelpers.js
-│   │   │   └── toastHelpers.js
-│   │   ├── 📄 App.js           # Main application component
-│   │   └── 📄 index.js         # Application entry point
-│   ├── 📁 public/              # Static assets
-│   ├── 📁 build/               # Production build files
-│   ├── 📄 package.json
-│   └── 📄 .env.example
-├── 📁 docs/                    # Documentation
-│   ├── 📁 api/                 # API documentation
-│   ├── 📁 sysml/               # System design diagrams
-│   └── 📁 jira/                # Project management docs
-├── 📁 .github/                 # GitHub workflows
-│   └── 📁 workflows/
-│       └── ci-cd.yml
-└── 📄 README.md                # This file
-```
+- **URL***: https://n12160202.atlassian.net/jira/software/projects/A1/boards/34/timeline?atlOrigin=eyJpIjoiM2ZjYzYwOWRmYWExNDY1OTk5ZGYzMzdhYmYwMjhkZGUiLCJwIjoiaiJ9
 
 ## 🛠️ Technology Stack
 
@@ -328,3 +247,4 @@ Components/
 - **Bundle optimization** with Create React App
 - **Memoization** with React.memo and useMemo
 - **Virtual scrolling** for large lists
+
