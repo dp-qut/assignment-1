@@ -51,7 +51,6 @@ import {
 import { adminService } from '../../services/api';
 
 const ReportsComponent = () => {
-  console.log('ReportsComponent rendering...');
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [dashboardStats, setDashboardStats] = useState(null);
@@ -84,11 +83,9 @@ const ReportsComponent = () => {
     setLoading(true);
     setError('');
     try {
-      console.log('Loading report data...');
       
       // Load dashboard stats
       const statsResponse = await adminService.getDashboardStats();
-      console.log('Dashboard stats loaded:', statsResponse.data);
       setDashboardStats(statsResponse.data.data.stats);
 
       // Load applications for analysis
@@ -96,14 +93,12 @@ const ReportsComponent = () => {
         dateRange, 
         limit: 1000 
       });
-      console.log('Applications loaded:', appsResponse.data);
       const applications = appsResponse.data.data.applications || [];
 
       // Load users for analysis
       const usersResponse = await adminService.getAllUsers({ 
         limit: 1000 
       });
-      console.log('Users loaded:', usersResponse.data);
       const users = usersResponse.data.data.users || [];
 
       // Process data for charts

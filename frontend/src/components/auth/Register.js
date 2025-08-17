@@ -51,14 +51,12 @@ const Register = () => {
     const { name, value, checked, type } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
     
-    console.log(`Field changed: ${name} = ${newValue}`);
     
     setFormData(prev => {
       const updated = {
         ...prev,
         [name]: newValue
       };
-      console.log('Updated form data:', updated);
       return updated;
     });
     
@@ -74,7 +72,6 @@ const Register = () => {
   const validateForm = () => {
     const errors = {};
     
-    console.log('Validating form with data:', formData);
     
     if (!formData.firstName || !formData.firstName.trim()) {
       errors.firstName = 'First name is required';
@@ -140,7 +137,6 @@ const Register = () => {
       errors.agreeToTerms = 'You must agree to the terms and conditions';
     }
     
-    console.log('Validation errors:', errors);
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -148,10 +144,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    console.log('Form Data before validation:', formData);
-    
     if (!validateForm()) {
-      console.log('Validation failed, form errors:', formErrors);
       return;
     }
 
@@ -167,10 +160,6 @@ const Register = () => {
         phone: formData.phone.trim()
       }
     };
-    
-    // Debug: Log the data being sent
-    console.log('Form Data:', formData);
-    console.log('User Data being sent:', userData);
     
     const result = await register(userData);
     
@@ -492,9 +481,6 @@ const Register = () => {
                 py: 1.5,
                 ...transparentButtonSx
               }}
-              onClick={() => {
-                console.log('Submit button clicked, current formData:', formData);
-              }}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
@@ -510,7 +496,6 @@ const Register = () => {
               variant="outlined"
               size="small"
               onClick={() => {
-                console.log('Current form data:', formData);
                 alert('Check console for form data');
               }}
               sx={{ mb: 1 }}

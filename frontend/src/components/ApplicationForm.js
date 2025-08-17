@@ -189,7 +189,6 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
   });
 
   useEffect(() => {
-    console.log('ApplicationForm mounted, loading visa types...');
     loadVisaTypes();
     if (application?.documents) {
       setDocuments(application.documents);
@@ -203,8 +202,6 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
         // Extract document types from the requiredDocuments array
         const docTypes = selectedVisaType.requiredDocuments.map(doc => doc.type || doc);
         setRequiredDocuments(docTypes);
-        console.log('Selected visa type:', selectedVisaType.name);
-        console.log('Required documents:', docTypes);
       } else {
         setRequiredDocuments([]);
       }
@@ -213,41 +210,16 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
 
   const loadVisaTypes = async () => {
     try {
-      console.log('Loading visa types...');
       setLoading(true);
       
-      // Test direct API call first
-      console.log('Testing direct fetch...');
-      const testResponse = await fetch('/api/visa-types', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      console.log('Direct fetch response status:', testResponse.status);
-      console.log('Direct fetch response ok:', testResponse.ok);
-      
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('Direct fetch data:', testData);
-        
-        if (testData.success && testData.data && testData.data.visaTypes) {
-          setVisaTypes(testData.data.visaTypes);
-          console.log('Visa types loaded successfully:', testData.data.visaTypes);
-          return;
-        }
-      }
-      
-      // Fallback to service call
-      console.log('Trying service call...');
+      // Use the service call
       const response = await visaTypeService.getVisaTypes();
-      console.log('Service response:', response);
       
-      if (response && response.data && response.data.visaTypes) {
-        setVisaTypes(response.data.visaTypes);
-        console.log('Visa types loaded via service:', response.data.visaTypes);
+      if (response && response.data && response.data.data && response.data.data.visaTypes) {
+        setVisaTypes(response.data.data.visaTypes);
       } else {
         console.error('Invalid response structure:', response);
+        console.error('Expected response.data.data.visaTypes, got:', response?.data);
         setError('Invalid response from server');
       }
       
@@ -275,11 +247,6 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
       const relevantErrors = Object.keys(currentStepErrors).filter(key => 
         currentStepFields.includes(key)
       );
-      
-      console.log('Current step:', activeStep);
-      console.log('Current step fields:', currentStepFields);
-      console.log('All validation errors:', currentStepErrors);
-      console.log('Relevant errors:', relevantErrors);
       
       if (relevantErrors.length === 0) {
         if (activeStep === 3) { // Documents step
@@ -707,7 +674,6 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
                 error={formik.touched.visaTypeId && Boolean(formik.errors.visaTypeId)}
                 helperText={formik.touched.visaTypeId && formik.errors.visaTypeId}
               >
-                {console.log('Rendering visa types dropdown, visaTypes:', visaTypes)}
                 {visaTypes && visaTypes.length > 0 ? (
                   visaTypes.map((visaType) => (
                     <MenuItem key={visaType._id} value={visaType._id}>
@@ -1171,8 +1137,6 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
               <Button
                 variant="contained"
                 onClick={() => {
-                  console.log('Next button clicked for step:', activeStep);
-                  console.log('Current form values:', formik.values);
                   handleNext();
                 }}
                 disabled={loading}

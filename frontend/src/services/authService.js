@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: process.env.REACT_APP_API_URL ? `${process.env.REACT_APP_API_URL}/api` : '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -59,7 +59,6 @@ class AuthService {
 
   // Register user
   async register(userData) {
-    console.log('AuthService: Sending registration data:', userData);
     const response = await API.post('/auth/register', userData);
     return response.data;
   }
