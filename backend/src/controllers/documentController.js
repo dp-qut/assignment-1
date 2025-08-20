@@ -111,9 +111,52 @@ const deleteDocument = async (req, res, next) => {
   }
 };
 
+// Download document by ID
+const downloadDocument = async (req, res, next) => {
+  try {
+    const document = await Document.findOne({
+      _id: req.params.id,
+      user: req.user.id
+    });
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Construct file path
+    const filePath = document.path || path.join(__dirname, '../../uploads', document.filename);
+    
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server'
+      });
+    }
+
+    // Set appropriate headers for download
+    res.setHeader('Content-Type', document.mimetype || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="${document.originalName || document.filename}"`);
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   uploadDocument,
   getMyDocuments,
   getDocumentById,
-  deleteDocument
+  deleteDocument,
+  downloadDocument
 };

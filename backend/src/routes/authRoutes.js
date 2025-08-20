@@ -6,8 +6,6 @@ const {
   register,
   login,
   logout,
-  verifyEmail,
-  resendVerification,
   forgotPassword,
   resetPassword,
   changePassword,
@@ -30,8 +28,6 @@ const {
 router.post('/register', validateUserRegistration, register);
 router.post('/login', validateUserLogin, login);
 router.post('/logout', logout);
-router.post('/verify-email', verifyEmail);
-router.post('/resend-verification', resendVerification);
 router.post('/forgot-password', validatePasswordReset, forgotPassword);
 router.post('/reset-password', resetPassword);
 

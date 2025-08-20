@@ -16,6 +16,9 @@ router.get('/', documentController.getMyDocuments);
 // Get document by ID
 router.get('/:id', documentController.getDocumentById);
 
+// Download document
+router.get('/:id/download', documentController.downloadDocument);
+
 // Delete document
 router.delete('/:id', documentController.deleteDocument);
 

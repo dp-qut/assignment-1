@@ -14,6 +14,8 @@ router.get('/dashboard/stats', adminController.getDashboardStats);
 // Application management
 router.get('/applications', adminController.getAllApplications);
 router.get('/applications/export', adminController.exportApplications);
+router.get('/applications/:id', adminController.getApplicationById);
+router.get('/applications/:applicationId/documents/:documentId/download', adminController.downloadApplicationDocument);
 router.put('/applications/:id/status', adminController.updateApplicationStatus);
 router.patch('/applications/:id/status', adminController.updateApplicationStatus);
 router.put('/applications/:id/review', adminController.reviewApplication);

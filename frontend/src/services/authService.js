@@ -203,6 +203,10 @@ export const adminService = {
   // Get application by ID
   getApplicationById: (applicationId) => API.get(`/admin/applications/${applicationId}`),
   
+  // Download application document
+  downloadApplicationDocument: (applicationId, documentId, inline = false) => 
+    API.get(`/admin/applications/${applicationId}/documents/${documentId}/download${inline ? '?inline=true' : ''}`, { responseType: 'blob' }),
+  
   // Update application status
   updateApplicationStatus: (applicationId, data) => 
     API.patch(`/admin/applications/${applicationId}/status`, data),

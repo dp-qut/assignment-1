@@ -56,11 +56,11 @@ const getAllUsers = async (req, res, next) => {
     const skip = (page - 1) * limit;
     
     // Build query filters
-    let filter = {};
+    let filter = { role: { $ne: 'admin' } }; // Exclude admin users
     if (req.query.status) {
       filter.status = req.query.status;
     }
-    if (req.query.role) {
+    if (req.query.role && req.query.role !== 'admin') {
       filter.role = req.query.role;
     }
     if (req.query.search) {
@@ -182,7 +182,7 @@ const getAllApplications = async (req, res, next) => {
 
     const applications = await Application.find(filter)
       .populate('userId', 'firstName lastName email')
-      .populate('visaType', 'name')
+      .populate('visaType', 'name description processingDays fee')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -205,21 +205,15 @@ const getAllApplications = async (req, res, next) => {
   }
 };
 
-// Update application status
-const updateApplicationStatus = async (req, res, next) => {
+// Get application by ID with full details
+const getApplicationById = async (req, res, next) => {
   try {
-    const { status, reviewNotes } = req.body;
-    
-    const application = await Application.findByIdAndUpdate(
-      req.params.id,
-      { 
-        status,
-        reviewNotes,
-        reviewedBy: req.user.id,
-        reviewedAt: new Date()
-      },
-      { new: true, runValidators: true }
-    ).populate('userId', 'firstName lastName email').populate('visaType', 'name');
+    const application = await Application.findById(req.params.id)
+      .populate('userId', 'firstName lastName email emailVerified profile')
+      .populate('visaType', 'name description processingDays fee requirements')
+      .populate('statusHistory.changedBy', 'firstName lastName email')
+      .populate('adminNotes.addedBy', 'firstName lastName email')
+      .populate('documents.verifiedBy', 'firstName lastName email');
 
     if (!application) {
       return res.status(404).json({
@@ -227,6 +221,143 @@ const updateApplicationStatus = async (req, res, next) => {
         message: 'Application not found'
       });
     }
+
+    res.json({
+      success: true,
+      data: { application }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Download application document
+const downloadApplicationDocument = async (req, res, next) => {
+  try {
+    const { applicationId, documentId } = req.params;
+    
+    console.log('Download request - Application ID:', applicationId, 'Document ID:', documentId);
+    
+    const application = await Application.findById(applicationId);
+    
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found'
+      });
+    }
+
+    const document = application.documents.find(doc => doc._id.toString() === documentId);
+    
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: 'Document not found'
+      });
+    }
+
+    console.log('Found document:', {
+      filename: document.filename,
+      originalName: document.originalName,
+      path: document.path,
+      mimeType: document.mimeType
+    });
+
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Try multiple possible file paths
+    const possiblePaths = [
+      document.path, // If path is stored in document
+      path.join(__dirname, '../../uploads', document.filename), // Direct uploads folder
+      path.join(process.cwd(), 'uploads', document.filename), // From project root
+      path.join(__dirname, '../../../uploads', document.filename) // In case structure is different
+    ];
+    
+    console.log('Trying paths:', possiblePaths);
+    
+    let filePath = null;
+    for (const testPath of possiblePaths) {
+      if (testPath && fs.existsSync(testPath)) {
+        filePath = testPath;
+        console.log('Found file at:', filePath);
+        break;
+      }
+    }
+    
+    if (!filePath) {
+      console.log('File not found in any location');
+      return res.status(404).json({
+        success: false,
+        message: 'File not found on server'
+      });
+    }
+
+    // Set appropriate headers for download
+    res.setHeader('Content-Type', document.mimeType || 'application/octet-stream');
+    
+    // Check if this is for inline viewing (PDFs) or download
+    const isInline = req.query.inline === 'true' && document.mimeType === 'application/pdf';
+    
+    if (isInline) {
+      res.setHeader('Content-Disposition', `inline; filename="${document.originalName || document.filename}"`);
+    } else {
+      res.setHeader('Content-Disposition', `attachment; filename="${document.originalName || document.filename}"`);
+    }
+    
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+    
+  } catch (error) {
+    console.error('Download error:', error);
+    next(error);
+  }
+};
+const updateApplicationStatus = async (req, res, next) => {
+  try {
+    const { status, reviewNotes, requiresInterview, interviewDate } = req.body;
+    
+    // Build update object
+    const updateData = {
+      status,
+      reviewedBy: req.user.id,
+      reviewedAt: new Date()
+    };
+
+    // Add remarks if provided
+    if (reviewNotes) {
+      updateData.reviewNotes = reviewNotes;
+    }
+
+    // Handle interview scheduling
+    if (requiresInterview && interviewDate) {
+      updateData['interviewInfo.isRequired'] = true;
+      updateData['interviewInfo.scheduledDate'] = new Date(interviewDate);
+      updateData['interviewInfo.status'] = 'scheduled';
+    }
+
+    // Add status history entry
+    const application = await Application.findById(req.params.id);
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: 'Application not found'
+      });
+    }
+
+    // Add to status history
+    application.addStatusHistory(status, req.user.id, reviewNotes, true);
+    
+    // Apply updates
+    Object.assign(application, updateData);
+    
+    // Save the application
+    await application.save();
+    
+    // Populate for response
+    await application.populate('userId', 'firstName lastName email');
+    await application.populate('visaType', 'name');
 
     res.json({
       success: true,
@@ -444,6 +575,8 @@ module.exports = {
   updateUserStatus,
   deleteUser,
   getAllApplications,
+  getApplicationById,
+  downloadApplicationDocument,
   updateApplicationStatus,
   reviewApplication,
   getSettings,

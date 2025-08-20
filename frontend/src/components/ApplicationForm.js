@@ -83,6 +83,7 @@ const validationSchemas = [
   // Step 3: Travel Information
   Yup.object({
     visaTypeId: Yup.string().required('Visa type is required'),
+    priority: Yup.string().oneOf(['normal', 'urgent', 'express'], 'Invalid priority').required('Priority is required'),
     purposeOfVisit: Yup.string().required('Purpose of visit is required'),
     intendedArrivalDate: Yup.date()
       .min(new Date(new Date().setHours(0, 0, 0, 0)), 'Arrival date cannot be in the past')
@@ -406,6 +407,14 @@ const ApplicationForm = ({ application, onSave, onCancel }) => {
         relationship: formik.values.emergencyContactRelationship || 'self',
         phone: formik.values.emergencyContactPhone || formik.values.phone,
         email: formik.values.emergencyContactEmail || formik.values.email
+      },
+      fee: {
+        amount: paymentData?.amount || 0,
+        currency: paymentData?.currency || 'USD',
+        paid: paymentCompleted || false,
+        paymentDate: paymentCompleted ? new Date() : null,
+        paymentMethod: paymentData?.method || null,
+        paymentReference: paymentData?.reference || null
       },
       documents: documents.map(doc => doc._id || doc.id).filter(Boolean)
     };

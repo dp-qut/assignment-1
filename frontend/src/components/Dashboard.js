@@ -30,7 +30,6 @@ import {
 import {
   Add as AddIcon,
   Visibility as ViewIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   FileDownload as DownloadIcon,
   Refresh as RefreshIcon
@@ -38,6 +37,7 @@ import {
 import { applicationService } from '../services/api';
 import ApplicationForm from './ApplicationForm';
 import ApplicationViewer from './ApplicationViewer';
+import ApplicationStatusViewer from './ApplicationStatusViewer';
 import Layout from './common/Layout';
 
 const Dashboard = () => {
@@ -94,11 +94,6 @@ const Dashboard = () => {
 
   const handleCreateApplication = () => {
     setSelectedApplication(null);
-    setCreateDialogOpen(true);
-  };
-
-  const handleEditApplication = (application) => {
-    setSelectedApplication(application);
     setCreateDialogOpen(true);
   };
 
@@ -322,11 +317,20 @@ const Dashboard = () => {
                         {application.visaType?.name || 'Unknown'}
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={application.status.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                          color={getStatusColor(application.status)}
-                          size="small"
-                        />
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Chip
+                            label={application.status.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                            color={getStatusColor(application.status)}
+                            size="small"
+                          />
+                          {application.reviewNotes && (
+                            <Tooltip title={`Admin Note: ${application.reviewNotes}`} arrow>
+                              <IconButton size="small" color="info">
+                                <ViewIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         {formatDate(application.createdAt)}
@@ -344,27 +348,7 @@ const Dashboard = () => {
                           </IconButton>
                         </Tooltip>
                         
-                        {application.status === 'draft' ? (
-                          <Tooltip title="Edit Application">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEditApplication(application)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title={`Cannot edit ${application.status} applications`}>
-                            <span>
-                              <IconButton
-                                size="small"
-                                disabled
-                              >
-                                <EditIcon />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                        )}
+                        {/* Edit functionality removed as per requirements - users cannot edit after submission */}
                         
                         {['approved', 'rejected', 'submitted'].includes(application.status) && (
                           <Tooltip title="Download Application PDF">
@@ -453,9 +437,23 @@ const Dashboard = () => {
         </DialogTitle>
         <DialogContent>
           {selectedApplication && (
-            <ApplicationViewer 
-              application={selectedApplication}
-            />
+            <Box>
+              {/* Status and Remarks Section */}
+              <ApplicationStatusViewer 
+                applicationId={selectedApplication._id}
+                compact={false}
+              />
+              
+              {/* Detailed Application Data */}
+              <Box mt={3}>
+                <Typography variant="h6" gutterBottom>
+                  Application Details
+                </Typography>
+                <ApplicationViewer 
+                  application={selectedApplication}
+                />
+              </Box>
+            </Box>
           )}
         </DialogContent>
         <DialogActions>

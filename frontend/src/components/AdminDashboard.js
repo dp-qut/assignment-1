@@ -30,7 +30,6 @@ import {
   useTheme,
   useMediaQuery,
   Avatar,
-  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -41,13 +40,9 @@ import {
   Description as ApplicationIcon,
   Assessment as ReportsIcon,
   Edit as EditIcon,
-  Block as BlockIcon,
   CheckCircle as ApproveIcon,
-  Cancel as RejectIcon,
   Refresh as RefreshIcon,
   GetApp as ExportIcon,
-  CheckCircle,
-  Info as InfoIcon,
   RateReview as ReviewIcon,
   Delete as DeleteIcon,
   Today as TodayIcon,
@@ -70,6 +65,7 @@ import { adminService } from '../services/api';
 import Layout from './common/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardStats from './admin/DashboardStats';
+import ApplicationDetailsDialog from './admin/ApplicationDetailsDialog';
 
 const AdminDashboard = () => {
   const theme = useTheme();
@@ -107,9 +103,8 @@ const AdminDashboard = () => {
   });
   
   // Dialogs
-  const [reviewDialog, setReviewDialog] = useState({ open: false, application: null });
+  const [applicationDetailsDialog, setApplicationDetailsDialog] = useState({ open: false, application: null });
   const [userDialog, setUserDialog] = useState({ open: false, user: null });
-  const [reviewComment, setReviewComment] = useState('');
 
   useEffect(() => {
     setLoading(true);
@@ -225,24 +220,11 @@ const AdminDashboard = () => {
     try {
       await adminService.updateApplicationStatus(applicationId, { status, reviewNotes: comment });
       setSuccess(`Application ${status} successfully`);
-      setReviewDialog({ open: false, application: null });
-      setReviewComment('');
+      setApplicationDetailsDialog({ open: false, application: null });
       loadApplications();
     } catch (err) {
       setError(`Failed to ${status} application`);
       console.error('Status update error:', err);
-    }
-  };
-
-  const handleUserStatusUpdate = async (userId, status) => {
-    try {
-      await adminService.updateUserStatus(userId, status);
-      setSuccess(`User ${status} successfully`);
-      setUserDialog({ open: false, user: null });
-      loadUsers();
-    } catch (err) {
-      setError(`Failed to ${status} user`);
-      console.error('User status update error:', err);
     }
   };
 
@@ -579,8 +561,9 @@ const AdminDashboard = () => {
                     <TableCell align="center">
                       <IconButton
                         size="small"
-                        onClick={() => setReviewDialog({ open: true, application })}
+                        onClick={() => setApplicationDetailsDialog({ open: true, application })}
                         title="Review Application"
+                        disabled={application.status === 'approved' || application.status === 'rejected'}
                       >
                         <ReviewIcon />
                       </IconButton>
@@ -662,7 +645,6 @@ const AdminDashboard = () => {
                 >
                   <MenuItem value="">All Roles</MenuItem>
                   <MenuItem value="user">User</MenuItem>
-                  <MenuItem value="admin">Admin</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -802,9 +784,6 @@ const AdminDashboard = () => {
           Admin Dashboard
         </Typography>
         <Box display="flex" alignItems="center">
-          <Typography variant="body2" color="text.secondary" sx={{ mr: 2 }}>
-            Welcome, {user?.firstName}
-          </Typography>
           <IconButton onClick={() => {
             if (activeTab === 0) {
               loadApplications();
@@ -836,139 +815,14 @@ const AdminDashboard = () => {
       {activeTab === 1 && renderApplicationsTab()}
       {activeTab === 2 && renderUsersTab()}
 
-      {/* Review Application Dialog */}
-      <Dialog
-        open={reviewDialog.open}
-        onClose={() => {
-          setReviewDialog({ open: false, application: null });
-          setReviewComment('');
-        }}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              Review Application: {reviewDialog.application?.applicationNumber || 
-                reviewDialog.application?._id?.slice(-8).toUpperCase()}
-            </Typography>
-            <Chip
-              label={reviewDialog.application?.status?.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              color={getStatusColor(reviewDialog.application?.status)}
-              size="small"
-            />
-          </Box>
-        </DialogTitle>
-        <DialogContent>
-          {reviewDialog.application && (
-            <Box>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom color="primary">
-                      Applicant Information
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Name:</strong> {reviewDialog.application.userId?.name || 
-                        `${reviewDialog.application.userId?.firstName || ''} ${reviewDialog.application.userId?.lastName || ''}`.trim() || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Email:</strong> {reviewDialog.application.userId?.email || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Phone:</strong> {reviewDialog.application.personalInfo?.phone || 'N/A'}
-                    </Typography>
-                  </Card>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Card variant="outlined" sx={{ p: 2, mb: 2 }}>
-                    <Typography variant="subtitle1" gutterBottom color="primary">
-                      Application Details
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Visa Type:</strong> {reviewDialog.application.visaType?.name || 'N/A'}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Submitted:</strong> {formatDate(reviewDialog.application.createdAt)}
-                    </Typography>
-                    <Typography variant="body2" gutterBottom>
-                      <strong>Purpose:</strong> {reviewDialog.application.travelInfo?.purpose || 'N/A'}
-                    </Typography>
-                  </Card>
-                </Grid>
-              </Grid>
-
-              {reviewDialog.application.reviewNotes && (
-                <Card variant="outlined" sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
-                  <Typography variant="subtitle1" gutterBottom color="primary">
-                    Previous Review Notes
-                  </Typography>
-                  <Typography variant="body2">
-                    {reviewDialog.application.reviewNotes}
-                  </Typography>
-                </Card>
-              )}
-
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Review Comments"
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                placeholder="Add your review comments here..."
-                sx={{ mt: 2 }}
-              />
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button 
-            onClick={() => {
-              setReviewDialog({ open: false, application: null });
-              setReviewComment('');
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={() => handleApplicationStatusUpdate(
-              reviewDialog.application?._id, 
-              'additionalInfoRequired',
-              reviewComment
-            )}
-            color="info"
-            startIcon={<InfoIcon />}
-            disabled={!reviewComment.trim()}
-          >
-            Request Info
-          </Button>
-          <Button
-            onClick={() => handleApplicationStatusUpdate(
-              reviewDialog.application?._id, 
-              'rejected',
-              reviewComment
-            )}
-            color="error"
-            startIcon={<RejectIcon />}
-            disabled={!reviewComment.trim()}
-          >
-            Reject
-          </Button>
-          <Button
-            onClick={() => handleApplicationStatusUpdate(
-              reviewDialog.application?._id, 
-              'approved',
-              reviewComment
-            )}
-            color="success"
-            variant="contained"
-            startIcon={<ApproveIcon />}
-          >
-            Approve
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Application Details Dialog */}
+      <ApplicationDetailsDialog
+        open={applicationDetailsDialog.open}
+        onClose={() => setApplicationDetailsDialog({ open: false, application: null })}
+        application={applicationDetailsDialog.application}
+        onStatusUpdate={handleApplicationStatusUpdate}
+        onReload={loadApplications}
+      />
 
       {/* User Management Dialog */}
       <Dialog
@@ -1013,12 +867,6 @@ const AdminDashboard = () => {
                 </Grid>
               </Card>
 
-              {userDialog.user.status === 'suspended' && (
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                  This user is currently suspended and cannot access the system.
-                </Alert>
-              )}
-
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                 User ID: {userDialog.user._id}
               </Typography>
@@ -1029,26 +877,6 @@ const AdminDashboard = () => {
           <Button onClick={() => setUserDialog({ open: false, user: null })}>
             Cancel
           </Button>
-          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-          {userDialog.user?.status === 'active' ? (
-            <Button
-              onClick={() => handleUserStatusUpdate(userDialog.user?._id, 'suspended')}
-              color="warning"
-              startIcon={<BlockIcon />}
-              variant="outlined"
-            >
-              Suspend User
-            </Button>
-          ) : (
-            <Button
-              onClick={() => handleUserStatusUpdate(userDialog.user?._id, 'active')}
-              color="success"
-              startIcon={<CheckCircle />}
-              variant="contained"
-            >
-              Activate User
-            </Button>
-          )}
           <Button
             onClick={() => handleDeleteUser(userDialog.user?._id)}
             color="error"

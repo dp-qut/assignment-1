@@ -1,7 +1,6 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const { AppError, asyncHandler } = require('../middleware/errorHandler');
-const emailService = require('../services/emailService');
 
 // @desc    Register user
 // @route   POST /api/auth/register
@@ -68,30 +67,16 @@ const register = asyncHandler(async (req, res, next) => {
 
     console.log('User created successfully:', user._id);
 
-    // Generate email verification token
-    const verificationToken = user.generateEmailVerificationToken();
-    await user.save({ validateBeforeSave: false });
-
-    // Send verification email (but don't fail registration if email fails)
-    try {
-      await emailService.sendEmailVerification(user.email, verificationToken, user.firstName);
-      console.log('Verification email sent successfully');
-    } catch (emailError) {
-      console.error('Failed to send verification email:', emailError);
-      // Continue with registration even if email fails
-    }
-    
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please check your email to verify your account.',
+      message: 'User registered successfully.',
       data: {
         user: {
           id: user._id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          profile: user.profile,
-          emailVerified: user.emailVerified
+          profile: user.profile
         }
       }
     });
@@ -175,7 +160,6 @@ const login = asyncHandler(async (req, res, next) => {
           firstName: user.firstName,
           lastName: user.lastName,
           profile: user.profile,
-          emailVerified: user.emailVerified,
           lastLogin: user.lastLogin
         },
         token
@@ -201,84 +185,6 @@ const logout = asyncHandler(async (req, res) => {
     });
 });
 
-// @desc    Verify email
-// @route   POST /api/auth/verify-email
-// @access  Public
-const verifyEmail = asyncHandler(async (req, res, next) => {
-  const { token } = req.body;
-
-  if (!token) {
-    return next(new AppError('Verification token is required', 400));
-  }
-
-  // Find user by verification token
-  const user = await User.findByVerificationToken(token);
-  if (!user) {
-    return next(new AppError('Invalid or expired verification token', 400));
-  }
-
-  // Update user
-  user.emailVerified = true;
-  user.emailVerificationToken = undefined;
-  user.emailVerificationExpire = undefined;
-  await user.save({ validateBeforeSave: false });
-
-  // Send welcome email
-  try {
-    await emailService.sendWelcomeEmail(user.email, user.firstName);
-  } catch (error) {
-    console.error('Failed to send welcome email:', error);
-    // Don't fail the verification if welcome email fails
-  }
-
-  res.status(200).json({
-    success: true,
-    message: 'Email verified successfully',
-    data: {
-      user: {
-        id: user._id,
-        email: user.email,
-        emailVerified: user.emailVerified
-      }
-    }
-  });
-});
-
-// @desc    Resend email verification
-// @route   POST /api/auth/resend-verification
-// @access  Public
-const resendVerification = asyncHandler(async (req, res, next) => {
-  const { email } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) {
-    return next(new AppError('User not found', 404));
-  }
-
-  if (user.emailVerified) {
-    return next(new AppError('Email is already verified', 400));
-  }
-
-  // Generate new verification token
-  const verificationToken = user.generateEmailVerificationToken();
-  await user.save({ validateBeforeSave: false });
-
-  try {
-    await emailService.sendEmailVerification(user.email, verificationToken, user.firstName);
-    
-    res.status(200).json({
-      success: true,
-      message: 'Verification email sent successfully'
-    });
-  } catch (error) {
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    return next(new AppError('Failed to send verification email', 500));
-  }
-});
-
 // @desc    Forgot password
 // @route   POST /api/auth/forgot-password
 // @access  Public
@@ -294,20 +200,13 @@ const forgotPassword = asyncHandler(async (req, res, next) => {
   const resetToken = user.generatePasswordResetToken();
   await user.save({ validateBeforeSave: false });
 
-  try {
-    await emailService.sendPasswordReset(user.email, resetToken, user.firstName);
-    
-    res.status(200).json({
-      success: true,
-      message: 'Password reset email sent successfully'
-    });
-  } catch (error) {
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    return next(new AppError('Failed to send password reset email', 500));
-  }
+  res.status(200).json({
+    success: true,
+    message: 'Password reset token generated successfully',
+    data: {
+      resetToken: resetToken // In production, this should be sent via email
+    }
+  });
 });
 
 // @desc    Reset password
@@ -337,14 +236,6 @@ const resetPassword = asyncHandler(async (req, res, next) => {
   
   await user.save();
 
-  // Send password change confirmation email
-  try {
-    await emailService.sendPasswordChangeConfirmation(user.email, user.firstName);
-  } catch (error) {
-    console.error('Failed to send password change confirmation:', error);
-    // Don't fail the reset if confirmation email fails
-  }
-
   res.status(200).json({
     success: true,
     message: 'Password reset successfully'
@@ -373,13 +264,6 @@ const changePassword = asyncHandler(async (req, res, next) => {
   user.password = newPassword;
   await user.save();
 
-  // Send password change confirmation email
-  try {
-    await emailService.sendPasswordChangeConfirmation(user.email, user.firstName);
-  } catch (error) {
-    console.error('Failed to send password change confirmation:', error);
-  }
-
   res.status(200).json({
     success: true,
     message: 'Password changed successfully'
@@ -402,7 +286,6 @@ const getMe = asyncHandler(async (req, res) => {
         firstName: user.firstName,
         lastName: user.lastName,
         profile: user.profile,
-        emailVerified: user.emailVerified,
         lastLogin: user.lastLogin,
         preferences: user.preferences,
         createdAt: user.createdAt
@@ -495,13 +378,6 @@ const deleteAccount = asyncHandler(async (req, res, next) => {
   user.email = `deleted_${Date.now()}_${user.email}`;
   await user.save({ validateBeforeSave: false });
 
-  // Send account deletion confirmation
-  try {
-    await emailService.sendAccountDeletionConfirmation(req.user.email, user.firstName);
-  } catch (error) {
-    console.error('Failed to send account deletion confirmation:', error);
-  }
-
   res.status(200).json({
     success: true,
     message: 'Account deleted successfully'
@@ -529,8 +405,6 @@ module.exports = {
   register,
   login,
   logout,
-  verifyEmail,
-  resendVerification,
   forgotPassword,
   resetPassword,
   changePassword,
